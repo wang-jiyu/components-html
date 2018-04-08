@@ -1,5 +1,5 @@
 <template>
-  <li>
+  <li class="hai-tree-item">
     <a>{{tree.label}}</a>
     <ul>
       <hai-tree v-if="tree.children" :tree="item" v-for="item in tree.children" :key="item.label"></hai-tree>
@@ -15,3 +15,10 @@ export default class HaiTree extends Vue {
   tree: Object
 }
 </script>
+
+<style lang="scss">
+@import '../../styles/var.scss';
+.hai-tree-item {
+  color: $--color-primary;
+}
+</style>
