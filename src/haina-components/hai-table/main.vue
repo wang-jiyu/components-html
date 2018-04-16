@@ -12,12 +12,12 @@
       :row-style="option.RowStyle"
       :empty-text="option.emptyText"
       :current-row-key="option.currentRowKey"
-      :cell-class-name="option.cellClassName" 
       :cell-style="option.cellStyle" 
       :header-row-class-name="option.headerRowClassName" 
       :header-row-style="option.headerRowStyle"
       :header-cell-style="option.headerCellStyle"
 
+      :cell-class-name="cellClassName" 
       :header-cell-class-name="headerCellClassName"
     >
       <slot name="fixed"></slot>
@@ -73,7 +73,7 @@ export default class HaiTable extends Vue {
         'class': ['thead-cell'],
         on: {
           mousedown: ($event: object) => { this.handleMouseDown($event, column) },
-          mouseup: ($event: object) => { this.handleMouseUp($event, column) },
+          // mouseup: ($event: object) => { this.handleMouseUp($event, column) },
           mousemove: ($event: object) => { this.handleMouseMove($event, column) }
         }
       }, [
@@ -85,36 +85,35 @@ export default class HaiTable extends Vue {
       ])
   }
   dragState:any = {
-    start: -1,
-    end: -1,
-    move: -1,
+    start: -9,
+    end: -9,
     dragging: false,
     direction: undefined
   }
 
   handleMouseDown(e: any, column: any) {
     this.dragState.dragging = true
-      this.dragState.start = parseInt(column.columnKey)
-      // 给拖动时的虚拟容器添加高度
-      let table = document.getElementsByClassName('hai-table')[0]
-      let virtual = document.getElementsByClassName('virtual') as any
-      for (let item of virtual) {
-        item.style.height = table.clientHeight - 1 + 'px'
-        item.style.width = item.parentElement.parentElement.clientWidth + 'px'
-      }
+    this.dragState.start = parseInt(column.columnKey)
+    // 给拖动时的虚拟容器添加高度
+    let table = document.getElementsByClassName('hai-table')[0]
+    let virtual = document.getElementsByClassName('virtual') as any
+    for (let item of virtual) {
+      item.style.height = table.clientHeight - 1 + 'px'
+      item.style.width = item.parentElement.parentElement.clientWidth + 'px'
+    }
+    document.addEventListener('mouseup', this.handleMouseUp);
   }
   
-  handleMouseUp (e: any, column: any) {
-    this.dragState.end = parseInt(column.columnKey) // 记录起始列
+  handleMouseUp () {
     this.columnDrag(this.dragState)
     // 初始化拖动状态
     this.dragState = {
-      start: -1,
-      end: -1,
-      move: -1,
+      start: -9,
+      end: -9,
       dragging: false,
       direction: undefined
     }
+    document.removeEventListener('mouseup', this.handleMouseUp);
   }
   
   // 拖动中
@@ -123,7 +122,7 @@ export default class HaiTable extends Vue {
       let index = parseInt(column.columnKey) // 记录起始列
       if (index - this.dragState.start !== 0) {
         this.dragState.direction = index - this.dragState.start < 0 ? 'left' : 'right' // 判断拖动方向
-        this.dragState.move = parseInt(column.columnKey)
+        this.dragState.end = parseInt(column.columnKey)
       } else {
         this.dragState.direction = undefined
       }
@@ -151,7 +150,13 @@ export default class HaiTable extends Vue {
   } 
 
   headerCellClassName ({column, columnIndex}:any) {
-    return (columnIndex - 1 === this.dragState.move ? `darg_active_${this.dragState.direction}` : '')
+    let active = columnIndex - 1 === this.dragState.end ? `darg_active_${this.dragState.direction}` : ''
+    let start = columnIndex - 1 === this.dragState.start ? `darg_start` : ''
+    return `${active} ${start}`
+  }
+
+  cellClassName ({column, columnIndex}:any) {
+    return (columnIndex - 1 === this.dragState.start ? `darg_start` : '')
   }
 
   @Watch('header')
@@ -164,6 +169,9 @@ export default class HaiTable extends Vue {
 <style lang="scss">
 @import '../../styles/var.scss';
 .hai-table {
+  .el-table .darg_start {
+    background-color: #f3f3f3;
+  }
   .el-table th {
     padding: 0;
     .virtual{
